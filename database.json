@@ -1,19 +1,20 @@
 {
-  "_info": "Cine Urso - Categorias Organizadas",
+  "_info": "Cine Urso - Sistema Completo com Senha",
   "_autor": "Ursoplusmax",
   "last_update": "2024-01-15",
   
   "categorias": {
     "filmes": {
-      " RECENTES": [
+      "📁 RECENTES": [
         {
-          "title": "O Elixir (2025)",
-          "magnet": "https://www.systemads.org/get.php?id=1YTZjVDN1QzNkJ2N5QzNjNDO4IGZmNTNiFWZjZDZhFGOhFWY1QGOyoDapRnY64mc11Dd49jO0VmbnFWb&refsite=torrentdosfilmes2",
+          "title": "Oppenheimer (2023)",
+          "magnet": "magnet:?xt=urn:btih:1234567890ABCDEF1234567890ABCDEF12345678",
           "quality": "1080p",
-          "audio": "Dual Áudio",
-          "size": "2.69 GB",
-          "year": 2025,
-          "genre": ["Suspense", "Terror"]
+          "audio": "Legendado",
+          "size": "4.2 GB",
+          "year": 2023,
+          "genre": ["Drama", "Histórico"],
+          "description": "A história do físico J. Robert Oppenheimer e seu papel no desenvolvimento da bomba atômica."
         },
         {
           "title": "Barbie (2023)",
@@ -22,21 +23,23 @@
           "audio": "Dublado",
           "size": "3.8 GB",
           "year": 2023,
-          "genre": ["Comédia", "Fantasia"]
+          "genre": ["Comédia", "Fantasia"],
+          "description": "Barbie vive no mundo perfeito de Barbieland, até que um dia descobre o mundo real."
         }
       ],
-      " COLEÇÃO": [
+      "⭐ COLEÇÃO": [
         {
-          "title": "Trilogia O Senhor dos Anéis (Extended)",
+          "title": "Trilogia Senhor dos Anéis (Extended)",
           "magnet": "magnet:?xt=urn:btih:3234567890ABCDEF1234567890ABCDEF12345678",
           "quality": "1080p",
           "audio": "Legendado",
           "size": "25 GB",
           "year": 2003,
-          "genre": ["Fantasia", "Aventura"]
+          "genre": ["Fantasia", "Aventura"],
+          "description": "A épica jornada de Frodo para destruir o Um Anel na Terra-Média."
         }
       ],
-      " POPULARES": [
+      "🔥 POPULARES": [
         {
           "title": "Avatar: O Caminho da Água (2022)",
           "magnet": "magnet:?xt=urn:btih:4234567890ABCDEF1234567890ABCDEF12345678",
@@ -44,80 +47,86 @@
           "audio": "Dublado",
           "size": "15.8 GB",
           "year": 2022,
-          "genre": ["Ficção Científica", "Aventura"]
-        }
-      ],
-      " 4K UHD": [
-        {
-          "title": "Duna (2021) 4K HDR",
-          "magnet": "magnet:?xt=urn:btih:5234567890ABCDEF1234567890ABCDEF12345678",
-          "quality": "4K",
-          "audio": "Legendado",
-          "size": "22.5 GB",
-          "year": 2021,
-          "genre": ["Ficção Científica", "Aventura"]
+          "genre": ["Ficção Científica", "Aventura"],
+          "description": "Jake Sully e Ney'tiri formam uma família e enfrentam novos perigos em Pandora."
         }
       ]
     },
     
     "series": {
-      " RECENTES": [
+      "📁 RECENTES": [
         {
-          "title": "The Last of Us S01E01",
-          "magnet": "magnet:?xt=urn:btih:6234567890ABCDEF1234567890ABCDEF12345678",
+          "title": "The Last of Us S01",
+          "magnet": "magnet:?xt=urn:btih:5234567890ABCDEF1234567890ABCDEF12345678",
           "quality": "1080p",
-          "season": 1,
-          "episode": 1,
           "audio": "Legendado",
-          "size": "2.8 GB",
+          "size": "18.5 GB",
           "year": 2023,
-          "genre": ["Drama", "Suspense"]
+          "genre": ["Drama", "Suspense"],
+          "description": "Em um mundo pós-apocalíptico, Joel é encarregado de levar Ellie para fora da zona de quarentena."
         }
       ],
-      " POR TEMPORADA": [
+      "⭐ COLEÇÃO": [
         {
-          "title": "Stranger Things - Temporada 4 Completa",
+          "title": "Breaking Bad - Temporada 1",
+          "magnet": "magnet:?xt=urn:btih:6234567890ABCDEF1234567890ABCDEF12345678",
+          "quality": "1080p",
+          "audio": "Dublado",
+          "size": "12.3 GB",
+          "year": 2008,
+          "genre": ["Drama", "Crime"],
+          "description": "Um professor de química se transforma em fabricante de metanfetamina após descobrir câncer."
+        }
+      ],
+      "📺 POR TEMPORADA": [
+        {
+          "title": "Stranger Things - Temporada 4",
           "magnet": "magnet:?xt=urn:btih:7234567890ABCDEF1234567890ABCDEF12345678",
           "quality": "1080p",
-          "season": 4,
           "audio": "Dublado",
-          "size": "18.2 GB",
+          "size": "22.1 GB",
           "year": 2022,
-          "genre": ["Ficção", "Terror"]
+          "genre": ["Ficção", "Terror"],
+          "description": "Os amigos enfrentam novos horrores do Mundo Invertido enquanto crescem."
         }
       ]
     },
     
     "animes": {
-      " RECENTES": [
+      "📁 RECENTES": [
         {
-          "title": "Attack on Titan - Temporada Final Parte 3",
+          "title": "Attack on Titan - Temporada Final",
           "magnet": "magnet:?xt=urn:btih:8234567890ABCDEF1234567890ABCDEF12345678",
           "quality": "1080p",
           "audio": "Japonês/Legendado",
-          "size": "1.8 GB",
+          "size": "8.5 GB",
           "year": 2023,
-          "genre": ["Ação", "Fantasia"]
+          "genre": ["Ação", "Fantasia"],
+          "description": "A batalha final pela liberdade da humanidade contra os Titãs."
         }
       ],
-      " SHONEN": [
+      "⭐ COLEÇÃO": [
         {
-          "title": "Demon Slayer: Vila dos Ferreiros",
+          "title": "Death Note - Completo",
           "magnet": "magnet:?xt=urn:btih:9234567890ABCDEF1234567890ABCDEF12345678",
           "quality": "1080p",
           "audio": "Japonês/Legendado",
-          "size": "1.5 GB",
-          "year": 2023,
-          "genre": ["Ação", "Fantasia"]
-        },
+          "size": "15.2 GB",
+          "year": 2006,
+          "genre": ["Mistério", "Suspense"],
+          "description": "Um estudante encontra um caderno que permite matar qualquer pessoa cujo nome seja escrito nele."
+        }
+      ],
+      "🐉 SHONEN": [
         {
-          "title": "Jujutsu Kaisen - Temporada 2",
+          "title": "Demon Slayer - Vila dos Ferreiros",
           "magnet": "magnet:?xt=urn:btih:A234567890ABCDEF1234567890ABCDEF12345678",
           "quality": "1080p",
-          "audio": "Japonês/Legendado", 
-          "size": "2.1 GB",
+          "audio": "Japonês/Legendado",
+          "size": "6.8 GB",
           "year": 2023,
-          "genre": ["Ação", "Sobrenatural"]
+          "genre": ["Ação", "Fantasia"],
+          "description": "Tanjiro e seus amigos enfrentam novos demônios na Vila dos Ferreiros."
         }
       ]
     }
