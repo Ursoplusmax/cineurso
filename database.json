@@ -1,0 +1,37 @@
+{
+  "_info": "Base de dados para addon Kodi",
+  "_autor": "urso",
+  "_criado_em": "2025-26-10",
+  "last_update": "2025-26-10",
+  
+  "movies": [
+    {
+      "title": "Avatar: O Caminho da Água (2022)",
+      "magnet": "magnet:?xt=urn:btih:1234567890ABCDEF1234567890ABCDEF12345678",
+      "quality": "1080p",
+      "audio": "Dublado",
+      "size": "15.8 GB",
+      "genre": ["Ficção Científica", "Aventura"]
+    }
+  ],
+  
+  "series": [
+    {
+      "title": "The Last of Us S01E01",
+      "magnet": "magnet:?xt=urn:btih:2234567890ABCDEF1234567890ABCDEF12345678",
+      "quality": "1080p",
+      "season": 1,
+      "episode": 1,
+      "audio": "Legendado"
+    }
+  ],
+  
+  "animes": [
+    {
+      "title": "Attack on Titan - Temporada Final",
+      "magnet": "magnet:?xt=urn:btih:3234567890ABCDEF1234567890ABCDEF12345678",
+      "quality": "720p",
+      "audio": "Japonês/Legendado"
+    }
+  ]
+}
