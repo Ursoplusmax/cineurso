@@ -5,69 +5,32 @@ import sys
 import urllib.parse
 import requests
 import json
+import re
 
 addon = xbmcaddon.Addon()
 addon_handle = int(sys.argv[1])
 base_url = sys.argv[0]
 
-# Configurações TMDB
-TMDB_API_KEY = "bf19c6b821a9beeb292567729c8bc45b"  # 👈 Obter em: https://www.themoviedb.org/settings/api
-TMDB_BASE_URL = "https://api.themoviedb.org/3"
-TMDB_IMAGE_URL = "https://image.tmdb.org/t/p/w500"
-
-# Sua base de dados
+# Configurações
+SENHA_ACESSO = "0404"  # 👈 Senha para entrar
 DATABASE_URL = "https://raw.githubusercontent.com/Ursoplusmax/cineurso/main/database.json"
 
 def get_url(**kwargs):
     return '{}?{}'.format(base_url, urllib.parse.urlencode(kwargs))
 
-def get_tmdb_movies():
-    """Busca filmes populares do TMDB"""
-    try:
-        url = f"{TMDB_BASE_URL}/movie/popular"
-        params = {
-            'api_key': TMDB_API_KEY,
-            'language': 'pt-BR',
-            'page': 1
-        }
-        response = requests.get(url, params=params, timeout=10)
-        if response.status_code == 200:
-            return response.json().get('results', [])
-    except Exception as e:
-        print(f"Erro TMDB: {e}")
-    return []
-
-def get_tmdb_series():
-    """Busca séries populares do TMDB"""
-    try:
-        url = f"{TMDB_BASE_URL}/tv/popular"
-        params = {
-            'api_key': TMDB_API_KEY,
-            'language': 'pt-BR',
-            'page': 1
-        }
-        response = requests.get(url, params=params, timeout=10)
-        if response.status_code == 200:
-            return response.json().get('results', [])
-    except Exception as e:
-        print(f"Erro TMDB: {e}")
-    return []
-
-def search_tmdb(query, content_type="movie"):
-    """Pesquisa no TMDB"""
-    try:
-        url = f"{TMDB_BASE_URL}/search/{content_type}"
-        params = {
-            'api_key': TMDB_API_KEY,
-            'query': query,
-            'language': 'pt-BR'
-        }
-        response = requests.get(url, params=params, timeout=10)
-        if response.status_code == 200:
-            return response.json().get('results', [])
-    except Exception as e:
-        print(f"Erro pesquisa TMDB: {e}")
-    return []
+def verificar_senha():
+    """Verifica senha de acesso"""
+    keyboard = xbmc.Keyboard('', 'Digite a senha de acesso:')
+    keyboard.doModal()
+    
+    if keyboard.isConfirmed():
+        senha_digitada = keyboard.getText()
+        if senha_digitada == SENHA_ACESSO:
+            return True
+        else:
+            xbmcgui.Dialog().ok('Acesso Negado', 'Senha incorreta!')
+            return False
+    return False
 
 def get_database_content():
     """Busca da sua base de dados"""
@@ -77,43 +40,26 @@ def get_database_content():
             return response.json()
     except:
         pass
-    return {"movies": [], "series": [], "animes": []}
+    return {"categorias": {}}
 
-def find_torrent_in_database(title, content_type="movie"):
-    """Encontra torrent na base de dados"""
-    db_content = get_database_content()
+def list_main_menu():
+    """Menu principal após senha"""
+    if not verificar_senha():
+        return
     
-    if content_type == "movie":
-        items = db_content.get('movies', [])
-    else:
-        items = db_content.get('series', [])
-    
-    # Busca por título similar
-    for item in items:
-        if title.lower() in item['title'].lower():
-            return item
-    
-    return None
-
-def list_main_categories():
-    """Menu principal"""
     categories = [
-        {'name': '🎬 FILMES POPULARES (TMDB)', 'type': 'tmdb_movies', 'icon': 'DefaultMovies.png'},
-        {'name': '📺 SÉRIES POPULARES (TMDB)', 'type': 'tmdb_series', 'icon': 'DefaultTVShows.png'},
-        {'name': '🔍 PESQUISAR NO TMDB', 'type': 'search_tmdb', 'icon': 'DefaultFolder.png'},
-        {'name': '⚡ MEUS TORRENTS (Base Local)', 'type': 'local_torrents', 'icon': 'DefaultFavourites.png'},
+        {'name': '🎬 FILMES', 'type': 'filmes', 'icon': 'DefaultMovies.png'},
+        {'name': '📺 SÉRIES', 'type': 'series', 'icon': 'DefaultTVShows.png'},
+        {'name': '🐉 ANIMES', 'type': 'animes', 'icon': 'DefaultGenre.png'},
+        {'name': '🔍 PESQUISAR', 'type': 'search', 'icon': 'DefaultFolder.png'},
         {'name': '🔄 ATUALIZAR CONTEÚDO', 'type': 'update', 'icon': 'DefaultSettings.png'}
     ]
     
     for cat in categories:
-        if cat['type'] == 'tmdb_movies':
-            url = get_url(action='list_tmdb_movies')
-        elif cat['type'] == 'tmdb_series':
-            url = get_url(action='list_tmdb_series')
-        elif cat['type'] == 'search_tmdb':
-            url = get_url(action='search_tmdb_menu')
-        elif cat['type'] == 'local_torrents':
-            url = get_url(action='list_local_torrents')
+        if cat['type'] in ['filmes', 'series', 'animes']:
+            url = get_url(action='list_subcategories', category_type=cat['type'])
+        elif cat['type'] == 'search':
+            url = get_url(action='search_menu')
         else:
             url = get_url(action='update_content')
         
@@ -123,237 +69,223 @@ def list_main_categories():
     
     xbmcplugin.endOfDirectory(addon_handle)
 
-def list_tmdb_movies():
-    """Lista filmes do TMDB"""
-    movies = get_tmdb_movies()
+def list_subcategories(category_type):
+    """Lista subcategorias"""
+    content = get_database_content()
+    categorias = content.get('categorias', {}).get(category_type, {})
     
-    if not movies:
-        li = xbmcgui.ListItem("Nenhum filme encontrado")
-        xbmcplugin.addDirectoryItem(addon_handle, "", li, False)
-    else:
-        for movie in movies:
-            title = movie.get('title', '')
-            year = movie.get('release_date', '')[:4]
-            
-            # Imagem
-            poster_path = movie.get('poster_path')
-            thumbnail = TMDB_IMAGE_URL + poster_path if poster_path else ""
-            
-            # Verificar se tem na base de dados
-            torrent = find_torrent_in_database(title, "movie")
-            
-            if torrent:
-                # Tem torrent - pode assistir
-                magnet_url = f"plugin://plugin.video.elementum/play?uri={urllib.parse.quote(torrent['magnet'])}"
-                display_title = f"▶ {title} ({year})"
-                is_playable = True
-            else:
-                # Não tem torrent - mostrar info
-                magnet_url = get_url(action='show_info', title=title, year=year, overview=movie.get('overview', ''))
-                display_title = f"ℹ️ {title} ({year})"
-                is_playable = False
-            
-            li = xbmcgui.ListItem(display_title)
-            li.setArt({'thumb': thumbnail, 'icon': 'DefaultVideo.png'})
-            li.setInfo('video', {
-                'title': title,
-                'year': int(year) if year else 0,
-                'plot': movie.get('overview', ''),
-                'rating': movie.get('vote_average', 0)
-            })
-            
-            if is_playable:
-                li.setProperty('IsPlayable', 'true')
-            
-            xbmcplugin.addDirectoryItem(addon_handle, magnet_url, li, is_playable)
+    # Subcategorias padrão
+    subcats_map = {
+        'filmes': ['📁 RECENTES', '⭐ COLEÇÃO', '🔥 POPULARES', '🎭 GÊNEROS'],
+        'series': ['📁 RECENTES', '⭐ COLEÇÃO', '📺 POR TEMPORADA'],
+        'animes': ['📁 RECENTES', '⭐ COLEÇÃO', '🐉 SHONEN']
+    }
+    
+    subcats = subcats_map.get(category_type, [])
+    
+    for subcat in subcats:
+        # Verificar se tem conteúdo nesta subcategoria
+        items = categorias.get(subcat, [])
+        count = len(items) if items else 0
+        
+        url = get_url(action='list_content', category_type=category_type, subcategory=subcat)
+        display_name = f"{subcat} ({count})" if count > 0 else subcat
+        
+        li = xbmcgui.ListItem(display_name)
+        
+        # Ícones para subcategorias
+        icon_map = {
+            '📁 RECENTES': 'DefaultRecentlyAdded.png',
+            '⭐ COLEÇÃO': 'DefaultFavourites.png',
+            '🔥 POPULARES': 'DefaultRating.png',
+            '🎭 GÊNEROS': 'DefaultGenre.png',
+            '📺 POR TEMPORADA': 'DefaultTV.png',
+            '🐉 SHONEN': 'DefaultGenre.png'
+        }
+        
+        li.setArt({'icon': icon_map.get(subcat, 'DefaultFolder.png')})
+        xbmcplugin.addDirectoryItem(addon_handle, url, li, True)
     
     xbmcplugin.endOfDirectory(addon_handle)
 
-def list_tmdb_series():
-    """Lista séries do TMDB"""
-    series = get_tmdb_series()
+def list_content(category_type, subcategory):
+    """Lista conteúdos de uma subcategoria"""
+    content = get_database_content()
+    items = content.get('categorias', {}).get(category_type, {}).get(subcategory, [])
     
-    if not series:
-        li = xbmcgui.ListItem("Nenhuma série encontrada")
+    if not items:
+        li = xbmcgui.ListItem("Nenhum conteúdo encontrado")
         xbmcplugin.addDirectoryItem(addon_handle, "", li, False)
     else:
-        for show in series:
-            title = show.get('name', '')
-            year = show.get('first_air_date', '')[:4]
+        for item in items:
+            # SEMPRE criar opção para ver fontes torrent
+            url = get_url(
+                action='list_torrent_sources', 
+                title=item['title'],
+                category_type=category_type,
+                subcategory=subcategory
+            )
             
-            # Imagem
-            poster_path = show.get('poster_path')
-            thumbnail = TMDB_IMAGE_URL + poster_path if poster_path else ""
+            display_name = item['title']
+            if item.get('quality'):
+                display_name += f" [{item['quality']}]"
+            if item.get('audio'):
+                display_name += f" ({item['audio']})"
             
-            # Verificar se tem na base de dados
-            torrent = find_torrent_in_database(title, "tv")
-            
-            if torrent:
-                # Tem torrent - pode assistir
-                magnet_url = f"plugin://plugin.video.elementum/play?uri={urllib.parse.quote(torrent['magnet'])}"
-                display_title = f"▶ {title} ({year})"
-                is_playable = True
-            else:
-                # Não tem torrent - mostrar info
-                magnet_url = get_url(action='show_info', title=title, year=year, overview=show.get('overview', ''))
-                display_title = f"ℹ️ {title} ({year})"
-                is_playable = False
-            
-            li = xbmcgui.ListItem(display_title)
-            li.setArt({'thumb': thumbnail, 'icon': 'DefaultVideo.png'})
+            li = xbmcgui.ListItem(display_name)
             li.setInfo('video', {
-                'title': title,
-                'year': int(year) if year else 0,
-                'plot': show.get('overview', ''),
-                'rating': show.get('vote_average', 0)
+                'title': item['title'],
+                'year': item.get('year'),
+                'genre': ', '.join(item.get('genre', [])),
+                'plot': item.get('description', '')
             })
             
-            if is_playable:
-                li.setProperty('IsPlayable', 'true')
-            
-            xbmcplugin.addDirectoryItem(addon_handle, magnet_url, li, is_playable)
+            xbmcplugin.addDirectoryItem(addon_handle, url, li, True)
     
     xbmcplugin.endOfDirectory(addon_handle)
 
-def search_tmdb_menu():
+def list_torrent_sources(title, category_type, subcategory):
+    """Lista fontes torrent para um conteúdo"""
+    content = get_database_content()
+    
+    # Buscar o item específico
+    items = content.get('categorias', {}).get(category_type, {}).get(subcategory, [])
+    target_item = None
+    
+    for item in items:
+        if item['title'] == title:
+            target_item = item
+            break
+    
+    if not target_item:
+        li = xbmcgui.ListItem("Conteúdo não encontrado")
+        xbmcplugin.addDirectoryItem(addon_handle, "", li, False)
+    else:
+        # Mostrar opções de torrent
+        if target_item.get('magnet'):
+            # Tem magnet único
+            magnet_url = f"plugin://plugin.video.elementum/play?uri={urllib.parse.quote(target_item['magnet'])}"
+            
+            display_name = f"▶ {target_item['title']}"
+            if target_item.get('quality'):
+                display_name += f" [{target_item['quality']}]"
+            if target_item.get('audio'):
+                display_name += f" ({target_item['audio']})"
+            if target_item.get('size'):
+                display_name += f" - {target_item['size']}"
+            
+            li = xbmcgui.ListItem(display_name)
+            li.setProperty('IsPlayable', 'true')
+            li.setInfo('video', {'title': target_item['title']})
+            
+            xbmcplugin.addDirectoryItem(addon_handle, magnet_url, li, False)
+        
+        elif target_item.get('torrents'):
+            # Tem múltiplos torrents
+            for torrent in target_item['torrents']:
+                magnet_url = f"plugin://plugin.video.elementum/play?uri={urllib.parse.quote(torrent['magnet'])}"
+                
+                display_name = f"▶ {torrent.get('quality', '')} - {torrent.get('audio', '')}"
+                if torrent.get('size'):
+                    display_name += f" - {torrent['size']}"
+                
+                li = xbmcgui.ListItem(display_name)
+                li.setProperty('IsPlayable', 'true')
+                li.setInfo('video', {'title': target_item['title']})
+                
+                xbmcplugin.addDirectoryItem(addon_handle, magnet_url, li, False)
+        
+        else:
+            li = xbmcgui.ListItem("❌ Nenhum link torrent disponível")
+            xbmcplugin.addDirectoryItem(addon_handle, "", li, False)
+    
+    xbmcplugin.endOfDirectory(addon_handle)
+
+def search_menu():
     """Menu de pesquisa"""
     categories = [
-        {'name': '🔍 PESQUISAR FILMES', 'type': 'movie'},
-        {'name': '🔍 PESQUISAR SÉRIES', 'type': 'tv'}
+        {'name': '🔍 PESQUISAR FILMES', 'type': 'filmes'},
+        {'name': '🔍 PESQUISAR SÉRIES', 'type': 'series'},
+        {'name': '🔍 PESQUISAR ANIMES', 'type': 'animes'}
     ]
     
     for cat in categories:
-        url = get_url(action='search_tmdb', content_type=cat['type'])
+        url = get_url(action='search_content', category_type=cat['type'])
         li = xbmcgui.ListItem(cat['name'])
         li.setArt({'icon': 'DefaultFolder.png'})
         xbmcplugin.addDirectoryItem(addon_handle, url, li, True)
     
     xbmcplugin.endOfDirectory(addon_handle)
 
-def search_tmdb(content_type):
-    """Pesquisa no TMDB"""
-    keyboard = xbmc.Keyboard('', f'Pesquisar {content_type}:')
+def search_content(category_type):
+    """Pesquisa conteúdo"""
+    keyboard = xbmc.Keyboard('', f'Pesquisar {category_type}:')
     keyboard.doModal()
     
     if keyboard.isConfirmed():
         query = keyboard.getText()
         if query:
-            results = search_tmdb(query, content_type)
+            content = get_database_content()
+            all_items = []
             
-            if not results:
+            # Buscar em todas as subcategorias
+            categorias = content.get('categorias', {}).get(category_type, {})
+            for subcat, items in categorias.items():
+                for item in items:
+                    if query.lower() in item['title'].lower():
+                        item['_subcategory'] = subcat  # Marcar de qual subcategoria veio
+                        all_items.append(item)
+            
+            if not all_items:
                 li = xbmcgui.ListItem("Nenhum resultado encontrado")
                 xbmcplugin.addDirectoryItem(addon_handle, "", li, False)
             else:
-                for item in results:
-                    title = item.get('title') or item.get('name')
-                    year = item.get('release_date', '')[:4] or item.get('first_air_date', '')[:4]
+                for item in all_items:
+                    url = get_url(
+                        action='list_torrent_sources', 
+                        title=item['title'],
+                        category_type=category_type,
+                        subcategory=item['_subcategory']
+                    )
                     
-                    poster_path = item.get('poster_path')
-                    thumbnail = TMDB_IMAGE_URL + poster_path if poster_path else ""
+                    display_name = f"🔍 {item['title']}"
+                    if item.get('quality'):
+                        display_name += f" [{item['quality']}]"
+                    if item.get('audio'):
+                        display_name += f" ({item['audio']})"
                     
-                    torrent = find_torrent_in_database(title, content_type)
+                    li = xbmcgui.ListItem(display_name)
+                    li.setInfo('video', {'title': item['title']})
                     
-                    if torrent:
-                        magnet_url = f"plugin://plugin.video.elementum/play?uri={urllib.parse.quote(torrent['magnet'])}"
-                        display_title = f"▶ {title} ({year})"
-                        is_playable = True
-                    else:
-                        magnet_url = get_url(action='show_info', title=title, year=year, overview=item.get('overview', ''))
-                        display_title = f"ℹ️ {title} ({year})"
-                        is_playable = False
-                    
-                    li = xbmcgui.ListItem(display_title)
-                    li.setArt({'thumb': thumbnail, 'icon': 'DefaultVideo.png'})
-                    li.setInfo('video', {
-                        'title': title,
-                        'year': int(year) if year else 0,
-                        'plot': item.get('overview', '')
-                    })
-                    
-                    if is_playable:
-                        li.setProperty('IsPlayable', 'true')
-                    
-                    xbmcplugin.addDirectoryItem(addon_handle, magnet_url, li, is_playable)
+                    xbmcplugin.addDirectoryItem(addon_handle, url, li, True)
             
             xbmcplugin.endOfDirectory(addon_handle)
 
-def list_local_torrents():
-    """Lista conteúdo direto da base de dados"""
-    content = get_database_content()
-    
-    categories = [
-        {'name': '🎬 FILMES', 'type': 'movies', 'items': content.get('movies', [])},
-        {'name': '📺 SÉRIES', 'type': 'series', 'items': content.get('series', [])},
-        {'name': '🐉 ANIMES', 'type': 'animes', 'items': content.get('animes', [])}
-    ]
-    
-    for cat in categories:
-        if cat['items']:
-            url = get_url(action='list_local_items', category=cat['type'])
-            li = xbmcgui.ListItem(f"{cat['name']} ({len(cat['items'])})")
-            li.setArt({'icon': 'DefaultFolder.png'})
-            xbmcplugin.addDirectoryItem(addon_handle, url, li, True)
-    
-    xbmcplugin.endOfDirectory(addon_handle)
-
-def list_local_items(category):
-    """Lista itens de uma categoria"""
-    content = get_database_content()
-    items = content.get(category, [])
-    
-    for item in items:
-        magnet_url = f"plugin://plugin.video.elementum/play?uri={urllib.parse.quote(item['magnet'])}"
-        
-        display_name = f"▶ {item['title']}"
-        if item.get('quality'):
-            display_name += f" [{item['quality']}]"
-        if item.get('audio'):
-            display_name += f" ({item['audio']})"
-        
-        li = xbmcgui.ListItem(display_name)
-        li.setProperty('IsPlayable', 'true')
-        li.setInfo('video', {'title': item['title']})
-        
-        xbmcplugin.addDirectoryItem(addon_handle, magnet_url, li, False)
-    
-    xbmcplugin.endOfDirectory(addon_handle)
-
-def show_info(title, year, overview):
-    """Mostra informações do conteúdo"""
-    xbmcgui.Dialog().ok(f"{title} ({year})", overview)
-    list_main_categories()
-
 def update_content():
     """Atualiza conteúdo"""
-    xbmcgui.Dialog().notification('Cine Urso', 'Conteúdo atualizado!', xbmcgui.NOTIFICATION_INFO)
-    list_main_categories()
+    xbmcgui.Dialog().notification('Cine Urso', 'Conteúdo atualizado do GitHub!', xbmcgui.NOTIFICATION_INFO)
+    list_main_menu()
 
 def router():
     params = urllib.parse.parse_qs(sys.argv[2][1:])
     
     action = params.get('action', [''])[0]
-    content_type = params.get('content_type', [''])[0]
-    category = params.get('category', [''])[0]
+    category_type = params.get('category_type', [''])[0]
+    subcategory = params.get('subcategory', [''])[0]
     title = params.get('title', [''])[0]
-    year = params.get('year', [''])[0]
-    overview = params.get('overview', [''])[0]
     
     if not action:
-        list_main_categories()
-    elif action == 'list_tmdb_movies':
-        list_tmdb_movies()
-    elif action == 'list_tmdb_series':
-        list_tmdb_series()
-    elif action == 'search_tmdb_menu':
-        search_tmdb_menu()
-    elif action == 'search_tmdb':
-        search_tmdb(content_type)
-    elif action == 'list_local_torrents':
-        list_local_torrents()
-    elif action == 'list_local_items':
-        list_local_items(category)
-    elif action == 'show_info':
-        show_info(title, year, overview)
+        list_main_menu()
+    elif action == 'list_subcategories':
+        list_subcategories(category_type)
+    elif action == 'list_content':
+        list_content(category_type, subcategory)
+    elif action == 'list_torrent_sources':
+        list_torrent_sources(title, category_type, subcategory)
+    elif action == 'search_menu':
+        search_menu()
+    elif action == 'search_content':
+        search_content(category_type)
     elif action == 'update_content':
         update_content()
 
