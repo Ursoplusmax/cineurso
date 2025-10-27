@@ -27,11 +27,11 @@ def get_content():
 def list_categories():
     '''Menu principal'''
     categories = [
-        {'name': '🔍 PESQUISAR', 'type': 'search', 'icon': 'DefaultFolder.png'},
-        {'name': '🎬 FILMES', 'type': 'filmes', 'icon': 'DefaultMovies.png'},
-        {'name': '📺 SÉRIES', 'type': 'series', 'icon': 'DefaultTVShows.png'},
-        {'name': '🐉 ANIMES', 'type': 'animes', 'icon': 'DefaultGenre.png'},
-        {'name': '🔄 ATUALIZAR CONTEÚDO', 'type': 'update', 'icon': 'DefaultFolder.png'}
+        {'name': ' PESQUISAR', 'type': 'search', 'icon': 'DefaultFolder.png'},
+        {'name': ' FILMES', 'type': 'filmes', 'icon': 'DefaultMovies.png'},
+        {'name': ' SÉRIES', 'type': 'series', 'icon': 'DefaultTVShows.png'},
+        {'name': ' ANIMES', 'type': 'animes', 'icon': 'DefaultGenre.png'},
+        {'name': ' ATUALIZAR CONTEÚDO', 'type': 'update', 'icon': 'DefaultFolder.png'}
     ]
     
     for cat in categories:
