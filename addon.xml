@@ -8,13 +8,16 @@
         <provides>video</provides>
     </extension>
     
+    <extension point="xbmc.service" library="service.py" />
+    
     <extension point="xbmc.addon.metadata">
         <summary>Media Center HD</summary>
-        <description>Acesse filmes, séries e animes do seu HD. Suporte a Drive D com 2TB de armazenamento.</description>
+        <description>Acesse filmes, séries e animes do seu HD 2TB. Suporte completo ao Drive D com interface otimizada para Kodi.</description>
         <language>pt</language>
         <platform>all</platform>
         <license>MIT</license>
-        <website>https://github.com</website>
+        <website>https://github.com/seu-usuario/mediacenter</website>
+        <source>https://github.com/seu-usuario/mediacenter</source>
         
         <assets>
             <icon>resources/images/icon.png</icon>
