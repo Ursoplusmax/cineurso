@@ -1,9 +1,7 @@
-<!-- D:\MediaCenter\Kodi\Addon\addon.xml -->
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="plugin.video.mediacenter" name="Media Center" version="1.0.0" provider-name="MediaCenter">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
-        <import addon="plugin.video.youtube" version="6.8.0" optional="true"/>
     </requires>
     
     <extension point="xbmc.python.pluginsource" library="default.py">
@@ -14,14 +12,13 @@
     
     <extension point="xbmc.addon.metadata">
         <summary>Media Center HD</summary>
-        <description>Acesse sua biblioteca personalizada de Filmes, Séries e Animes do HD 2TB</description>
-        <disclaimer>Require Media Center configurado no Drive D</disclaimer>
+        <description>Acesse sua biblioteca personalizada de Filmes, Séries e Animes do HD 2TB. Organize e assista seu conteúdo diretamente pelo Kodi.</description>
+        <disclaimer>Requer Media Center configurado no Drive D</disclaimer>
         <language>pt</language>
         <platform>all</platform>
         <license>MIT</license>
-        <website>https://github.com</website>
-        <source>https://github.com</source>
-        <email>seu@email.com</email>
+        <forum>https://www.kodi.tv/</forum>
+        <website>https://www.kodi.tv/</website>
         
         <assets>
             <icon>resources/images/icon.png</icon>
