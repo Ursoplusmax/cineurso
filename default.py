@@ -1,4 +1,3 @@
-# D:\MediaCenter\Kodi\Addon\default.py
 import os
 import sys
 import json
@@ -7,435 +6,265 @@ import xbmcgui
 import xbmcplugin
 import xbmcaddon
 
-# Configurações do addon
+# Addon info
 addon = xbmcaddon.Addon()
 addon_id = addon.getAddonInfo('id')
 addon_name = addon.getAddonInfo('name')
-addon_version = addon.getAddonInfo('version')
-addon_path = addon.getAddonInfo('path')
 addon_handle = int(sys.argv[1])
+addon_url = sys.argv[0]
 
-# Caminhos
-db_path = "D:\\MediaCenter\\Data\\media.db"
-resources_path = os.path.join(addon_path, 'resources')
-images_path = os.path.join(resources_path, 'images')
+# Database path
+DB_PATH = "D:\\MediaCenter\\Data\\media.db"
 
-def log(message, level=xbmc.LOGINFO):
-    """Log messages para debug"""
-    xbmc.log(f"{addon_id} - {message}", level)
+def log(msg, level=xbmc.LOGDEBUG):
+    xbmc.log(f"[{addon_id}] {msg}", level)
 
 def load_media_data():
-    """Carrega dados do Media Center"""
+    """Load media data from JSON database"""
     try:
-        if os.path.exists(db_path):
-            with open(db_path, 'r', encoding='utf-8') as f:
+        if os.path.exists(DB_PATH):
+            with open(DB_PATH, 'r', encoding='utf-8') as f:
                 return json.load(f)
         else:
-            show_notification("Database não encontrado! Execute o scan primeiro.")
+            show_notification("Database não encontrado! Execute o scan no Media Center.")
             return []
     except Exception as e:
-        log(f"Erro ao carregar dados: {str(e)}", xbmc.LOGERROR)
+        log(f"Error loading database: {str(e)}", xbmc.LOGERROR)
+        show_notification("Erro ao carregar biblioteca!")
         return []
 
-def show_notification(message, time=5000):
-    """Mostra notificação no Kodi"""
-    xbmcgui.Dialog().notification(addon_name, message, time=time)
-
-def create_list_item(label, path, is_folder=False, info=None, art=None):
-    """Cria um item de lista para o Kodi"""
-    list_item = xbmcgui.ListItem(label=label, path=path)
-    list_item.setProperty('IsPlayable', 'false' if is_folder else 'true')
-    
-    if info:
-        list_item.setInfo('video', info)
-    
-    if art:
-        list_item.setArt(art)
-    else:
-        # Arte padrão baseada no tipo de conteúdo
-        default_art = {
-            'icon': os.path.join(images_path, 'icon.png'),
-            'fanart': os.path.join(images_path, 'fanart.jpg')
-        }
-        list_item.setArt(default_art)
-    
-    if not is_folder:
-        list_item.setContentLookup(False)
-        
-    return list_item
+def show_notification(message):
+    xbmcgui.Dialog().notification(addon_name, message)
 
 def main_menu():
-    """Menu principal do addon"""
+    """Main menu"""
     items = [
-        {
-            'label': '🎬 Filmes',
-            'action': 'list_movies',
-            'folder': True,
-            'art': {'icon': os.path.join(images_path, 'movies.png')}
-        },
-        {
-            'label': '📺 Séries',
-            'action': 'list_series',
-            'folder': True,
-            'art': {'icon': os.path.join(images_path, 'series.png')}
-        },
-        {
-            'label': '🎌 Animes',
-            'action': 'list_animes',
-            'folder': True,
-            'art': {'icon': os.path.join(images_path, 'anime.png')}
-        },
-        {
-            'label': '📚 Biblioteca Completa',
-            'action': 'list_all',
-            'folder': True,
-            'art': {'icon': os.path.join(images_path, 'library.png')}
-        },
-        {
-            'label': '🔄 Atualizar Biblioteca',
-            'action': 'update_library',
-            'folder': False,
-            'art': {'icon': os.path.join(images_path, 'refresh.png')}
-        },
-        {
-            'label': 'ℹ️ Informações',
-            'action': 'show_info',
-            'folder': False,
-            'art': {'icon': os.path.join(images_path, 'info.png')}
-        }
+        ("🎬 Filmes", "movies"),
+        ("📺 Séries", "series"), 
+        ("🎌 Animes", "animes"),
+        ("📚 Todos os Itens", "all"),
+        ("🔄 Atualizar", "update"),
+        ("ℹ️ Sobre", "about")
     ]
     
-    for item in items:
-        list_item = create_list_item(
-            label=item['label'],
-            path=f"plugin://{addon_id}/?action={item['action']}",
-            is_folder=item['folder'],
-            art=item['art']
-        )
+    for label, action in items:
+        li = xbmcgui.ListItem(label)
+        url = f"{addon_url}?action={action}"
         
-        xbmcplugin.addDirectoryItem(
-            handle=addon_handle,
-            url=list_item.getPath(),
-            listitem=list_item,
-            isFolder=item['folder']
-        )
+        if action in ["movies", "series", "animes", "all"]:
+            li.setProperty('IsPlayable', 'false')
+            is_folder = True
+        else:
+            li.setProperty('IsPlayable', 'false') 
+            is_folder = False
+            
+        xbmcplugin.addDirectoryItem(addon_handle, url, li, is_folder)
     
     xbmcplugin.endOfDirectory(addon_handle)
-    xbmcplugin.setContent(addon_handle, 'files')
 
 def list_movies():
-    """Lista todos os filmes"""
+    """List all movies"""
     data = load_media_data()
     movies = [item for item in data if item.get('Type') == 'Filme']
     
     if not movies:
-        show_notification("Nenhum filme encontrado!")
-        xbmcplugin.endOfDirectory(addon_handle)
-        return
-    
-    for movie in movies:
-        title = movie.get('Name', 'Filme Desconhecido')
-        file_path = movie.get('Path', '')
-        size = movie.get('Size', 'N/A')
-        
-        info = {
-            'title': title,
-            'plot': f"Tamanho: {size}\nCaminho: {file_path}",
-            'mediatype': 'movie'
-        }
-        
-        art = {
-            'icon': os.path.join(images_path, 'movie.png'),
-            'poster': os.path.join(images_path, 'movie.png')
-        }
-        
-        list_item = create_list_item(
-            label=title,
-            path=file_path,
-            is_folder=False,
-            info=info,
-            art=art
-        )
-        
-        xbmcplugin.addDirectoryItem(
-            handle=addon_handle,
-            url=file_path,
-            listitem=list_item,
-            isFolder=False
-        )
+        li = xbmcgui.ListItem("Nenhum filme encontrado")
+        xbmcplugin.addDirectoryItem(addon_handle, "", li, False)
+    else:
+        for movie in movies:
+            title = movie.get('Name', 'Filme Desconhecido')
+            path = movie.get('Path', '')
+            
+            li = xbmcgui.ListItem(title)
+            li.setProperty('IsPlayable', 'true')
+            li.setInfo('video', {'title': title, 'mediatype': 'movie'})
+            
+            xbmcplugin.addDirectoryItem(addon_handle, path, li, False)
     
     xbmcplugin.endOfDirectory(addon_handle)
-    xbmcplugin.setContent(addon_handle, 'movies')
 
 def list_series():
-    """Lista séries agrupadas"""
+    """List series grouped by name"""
     data = load_media_data()
-    series_episodes = [item for item in data if item.get('Type') == 'Série']
+    series_data = [item for item in data if item.get('Type') == 'Série']
     
-    if not series_episodes:
-        show_notification("Nenhuma série encontrada!")
-        xbmcplugin.endOfDirectory(addon_handle)
-        return
-    
-    # Agrupar por série
-    series_dict = {}
-    for episode in series_episodes:
-        series_name = episode.get('Series', 'Série Desconhecida')
-        if series_name not in series_dict:
-            series_dict[series_name] = []
-        series_dict[series_name].append(episode)
-    
-    for series_name, episodes in series_dict.items():
-        # Item da série (pasta)
-        series_info = {
-            'title': series_name,
-            'plot': f"{len(episodes)} episódios disponíveis",
-            'mediatype': 'tvshow'
-        }
+    if not series_data:
+        li = xbmcgui.ListItem("Nenhuma série encontrada")
+        xbmcplugin.addDirectoryItem(addon_handle, "", li, False)
+    else:
+        # Group by series name
+        series_dict = {}
+        for episode in series_data:
+            series_name = episode.get('Series', 'Série Desconhecida')
+            if series_name not in series_dict:
+                series_dict[series_name] = []
+            series_dict[series_name].append(episode)
         
-        series_art = {
-            'icon': os.path.join(images_path, 'series.png'),
-            'poster': os.path.join(images_path, 'series.png')
-        }
-        
-        series_item = create_list_item(
-            label=f"📺 {series_name} ({len(episodes)} episódios)",
-            path=f"plugin://{addon_id}/?action=list_series_episodes&series={series_name}",
-            is_folder=True,
-            info=series_info,
-            art=series_art
-        )
-        
-        xbmcplugin.addDirectoryItem(
-            handle=addon_handle,
-            url=series_item.getPath(),
-            listitem=series_item,
-            isFolder=True
-        )
+        for series_name, episodes in series_dict.items():
+            label = f"📺 {series_name} ({len(episodes)} episódios)"
+            li = xbmcgui.ListItem(label)
+            url = f"{addon_url}?action=series_episodes&series={series_name}"
+            xbmcplugin.addDirectoryItem(addon_handle, url, li, True)
     
     xbmcplugin.endOfDirectory(addon_handle)
-    xbmcplugin.setContent(addon_handle, 'tvshows')
 
 def list_series_episodes(series_name):
-    """Lista episódios de uma série específica"""
+    """List episodes for a specific series"""
     data = load_media_data()
     episodes = [item for item in data if item.get('Type') == 'Série' and item.get('Series') == series_name]
     
     for episode in episodes:
         episode_name = episode.get('Episode', 'Episódio Desconhecido')
-        file_path = episode.get('Path', '')
-        size = episode.get('Size', 'N/A')
+        path = episode.get('Path', '')
         
-        info = {
+        li = xbmcgui.ListItem(episode_name)
+        li.setProperty('IsPlayable', 'true')
+        li.setInfo('video', {
             'title': episode_name,
             'tvshowtitle': series_name,
-            'plot': f"Tamanho: {size}\nSérie: {series_name}",
             'mediatype': 'episode'
-        }
+        })
         
-        art = {
-            'icon': os.path.join(images_path, 'episode.png')
-        }
-        
-        list_item = create_list_item(
-            label=episode_name,
-            path=file_path,
-            is_folder=False,
-            info=info,
-            art=art
-        )
-        
-        xbmcplugin.addDirectoryItem(
-            handle=addon_handle,
-            url=file_path,
-            listitem=list_item,
-            isFolder=False
-        )
+        xbmcplugin.addDirectoryItem(addon_handle, path, li, False)
     
     xbmcplugin.endOfDirectory(addon_handle)
-    xbmcplugin.setContent(addon_handle, 'episodes')
 
 def list_animes():
-    """Lista animes agrupados"""
+    """List animes grouped by name"""
     data = load_media_data()
-    anime_episodes = [item for item in data if item.get('Type') == 'Anime']
+    anime_data = [item for item in data if item.get('Type') == 'Anime']
     
-    if not anime_episodes:
-        show_notification("Nenhum anime encontrado!")
-        xbmcplugin.endOfDirectory(addon_handle)
-        return
-    
-    # Agrupar por anime
-    anime_dict = {}
-    for episode in anime_episodes:
-        anime_name = episode.get('Anime', 'Anime Desconhecido')
-        if anime_name not in anime_dict:
-            anime_dict[anime_name] = []
-        anime_dict[anime_name].append(episode)
-    
-    for anime_name, episodes in anime_dict.items():
-        anime_info = {
-            'title': anime_name,
-            'plot': f"{len(episodes)} episódios disponíveis",
-            'mediatype': 'tvshow'
-        }
+    if not anime_data:
+        li = xbmcgui.ListItem("Nenhum anime encontrado")
+        xbmcplugin.addDirectoryItem(addon_handle, "", li, False)
+    else:
+        # Group by anime name
+        anime_dict = {}
+        for episode in anime_data:
+            anime_name = episode.get('Anime', 'Anime Desconhecido')
+            if anime_name not in anime_dict:
+                anime_dict[anime_name] = []
+            anime_dict[anime_name].append(episode)
         
-        anime_art = {
-            'icon': os.path.join(images_path, 'anime.png'),
-            'poster': os.path.join(images_path, 'anime.png')
-        }
-        
-        anime_item = create_list_item(
-            label=f"🎌 {anime_name} ({len(episodes)} episódios)",
-            path=f"plugin://{addon_id}/?action=list_anime_episodes&anime={anime_name}",
-            is_folder=True,
-            info=anime_info,
-            art=anime_art
-        )
-        
-        xbmcplugin.addDirectoryItem(
-            handle=addon_handle,
-            url=anime_item.getPath(),
-            listitem=anime_item,
-            isFolder=True
-        )
+        for anime_name, episodes in anime_dict.items():
+            label = f"🎌 {anime_name} ({len(episodes)} episódios)"
+            li = xbmcgui.ListItem(label)
+            url = f"{addon_url}?action=anime_episodes&anime={anime_name}"
+            xbmcplugin.addDirectoryItem(addon_handle, url, li, True)
     
     xbmcplugin.endOfDirectory(addon_handle)
-    xbmcplugin.setContent(addon_handle, 'tvshows')
 
 def list_anime_episodes(anime_name):
-    """Lista episódios de um anime específico"""
+    """List episodes for a specific anime"""
     data = load_media_data()
     episodes = [item for item in data if item.get('Type') == 'Anime' and item.get('Anime') == anime_name]
     
     for episode in episodes:
         episode_name = episode.get('Episode', 'Episódio Desconhecido')
-        file_path = episode.get('Path', '')
-        size = episode.get('Size', 'N/A')
+        path = episode.get('Path', '')
         
-        info = {
+        li = xbmcgui.ListItem(episode_name)
+        li.setProperty('IsPlayable', 'true')
+        li.setInfo('video', {
             'title': episode_name,
             'tvshowtitle': anime_name,
-            'plot': f"Tamanho: {size}\nAnime: {anime_name}",
             'mediatype': 'episode'
-        }
+        })
         
-        art = {
-            'icon': os.path.join(images_path, 'anime_episode.png')
-        }
-        
-        list_item = create_list_item(
-            label=episode_name,
-            path=file_path,
-            is_folder=False,
-            info=info,
-            art=art
-        )
-        
-        xbmcplugin.addDirectoryItem(
-            handle=addon_handle,
-            url=file_path,
-            listitem=list_item,
-            isFolder=False
-        )
+        xbmcplugin.addDirectoryItem(addon_handle, path, li, False)
     
     xbmcplugin.endOfDirectory(addon_handle)
-    xbmcplugin.setContent(addon_handle, 'episodes')
 
 def list_all():
-    """Lista toda a biblioteca"""
+    """List all media items"""
     data = load_media_data()
     
     for item in data:
         if item.get('Type') == 'Filme':
-            title = f"🎬 {item.get('Name')}"
-            info = {'title': item.get('Name'), 'mediatype': 'movie'}
+            label = f"🎬 {item.get('Name')}"
         elif item.get('Type') == 'Série':
-            title = f"📺 {item.get('Series')} - {item.get('Episode')}"
-            info = {'title': item.get('Episode'), 'tvshowtitle': item.get('Series'), 'mediatype': 'episode'}
+            label = f"📺 {item.get('Series')} - {item.get('Episode')}"
         else:  # Anime
-            title = f"🎌 {item.get('Anime')} - {item.get('Episode')}"
-            info = {'title': item.get('Episode'), 'tvshowtitle': item.get('Anime'), 'mediatype': 'episode'}
+            label = f"🎌 {item.get('Anime')} - {item.get('Episode')}"
         
-        list_item = create_list_item(
-            label=title,
-            path=item.get('Path'),
-            is_folder=False,
-            info=info
-        )
-        
-        xbmcplugin.addDirectoryItem(
-            handle=addon_handle,
-            url=item.get('Path'),
-            listitem=list_item,
-            isFolder=False
-        )
+        path = item.get('Path', '')
+        li = xbmcgui.ListItem(label)
+        li.setProperty('IsPlayable', 'true')
+        xbmcplugin.addDirectoryItem(addon_handle, path, li, False)
     
     xbmcplugin.endOfDirectory(addon_handle)
-    xbmcplugin.setContent(addon_handle, 'files')
 
 def update_library():
-    """Executa scan do Media Center"""
+    """Update media library"""
     try:
         import subprocess
         script_path = "D:\\MediaCenter\\Scripts\\MediaCenterAddon.ps1"
         if os.path.exists(script_path):
-            subprocess.run(["powershell", "-ExecutionPolicy", "Bypass", "-File", script_path, "scan"], 
-                         capture_output=True, text=True)
-            show_notification("Biblioteca atualizada com sucesso!")
+            result = subprocess.run([
+                "powershell", "-ExecutionPolicy", "Bypass", 
+                "-File", script_path, "scan"
+            ], capture_output=True, text=True, timeout=300)
+            
+            if result.returncode == 0:
+                show_notification("Biblioteca atualizada com sucesso!")
+            else:
+                show_notification("Erro ao atualizar biblioteca!")
         else:
             show_notification("Script do Media Center não encontrado!")
     except Exception as e:
-        log(f"Erro ao atualizar biblioteca: {str(e)}", xbmc.LOGERROR)
-        show_notification("Erro ao atualizar biblioteca!")
+        log(f"Update error: {str(e)}", xbmc.LOGERROR)
+        show_notification("Erro na atualização!")
 
-def show_info():
-    """Mostra informações do addon"""
+def show_about():
+    """Show about information"""
     data = load_media_data()
-    total_items = len(data)
-    movies = len([item for item in data if item.get('Type') == 'Filme'])
-    series = len([item for item in data if item.get('Type') == 'Série'])
-    animes = len([item for item in data if item.get('Type') == 'Anime'])
+    total = len(data)
+    movies = len([x for x in data if x.get('Type') == 'Filme'])
+    series = len([x for x in data if x.get('Type') == 'Série'])
+    animes = len([x for x in data if x.get('Type') == 'Anime'])
     
-    message = f"""Media Center v{addon_version}
+    text = f"""Media Center v{addon.getAddonInfo('version')}
 
-Biblioteca:
-• Total de itens: {total_items}
+Estatísticas da Biblioteca:
+• Total de itens: {total}
 • Filmes: {movies}
-• Séries: {series}
+• Séries: {series} 
 • Animes: {animes}
 
-Localização: D:\MediaCenter\
-Database: {db_path}"""
+Localização: D:\\MediaCenter\\
+Desenvolvido para Kodi"""
     
-    xbmcgui.Dialog().textviewer('Informações do Media Center', message)
+    xbmcgui.Dialog().textviewer('Sobre o Media Center', text)
 
 def router(paramstring):
-    """Roteamento de ações"""
-    params = dict(paramstring.split('=') for param in paramstring.split('&') if '=' in param)
+    """Route actions"""
+    params = {}
+    if paramstring:
+        for param in paramstring.split('&'):
+            if '=' in param:
+                key, value = param.split('=')
+                params[key] = value
     
     action = params.get('action', 'main')
-    series_name = params.get('series', '')
-    anime_name = params.get('anime', '')
     
     if action == 'main':
         main_menu()
-    elif action == 'list_movies':
+    elif action == 'movies':
         list_movies()
-    elif action == 'list_series':
+    elif action == 'series':
         list_series()
-    elif action == 'list_series_episodes':
-        list_series_episodes(series_name)
-    elif action == 'list_animes':
+    elif action == 'series_episodes':
+        list_series_episodes(params.get('series', ''))
+    elif action == 'animes':
         list_animes()
-    elif action == 'list_anime_episodes':
-        list_anime_episodes(anime_name)
-    elif action == 'list_all':
+    elif action == 'anime_episodes':
+        list_anime_episodes(params.get('anime', ''))
+    elif action == 'all':
         list_all()
-    elif action == 'update_library':
+    elif action == 'update':
         update_library()
-    elif action == 'show_info':
-        show_info()
+    elif action == 'about':
+        show_about()
 
 if __name__ == '__main__':
     router(sys.argv[2][1:] if len(sys.argv) > 2 else '')
